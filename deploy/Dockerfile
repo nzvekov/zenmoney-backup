@@ -11,5 +11,7 @@ FROM python:3.12-slim
 ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
+# Docker copies this ownership into a new named volume, which would otherwise belong to root.
+RUN mkdir /backups && chown 10001:10001 /backups
 USER 10001:10001
 CMD ["zenmoney-backup"]

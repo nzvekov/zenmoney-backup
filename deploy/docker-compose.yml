@@ -21,8 +21,7 @@ services:
       CATCH_UP_MISSED: ${CATCH_UP_MISSED:-}
       LOG_LEVEL: ${LOG_LEVEL:-}
     volumes:
-      # Set BACKUP_HOST_DIR to a folder on a persistent host disk.
-      - ${BACKUP_HOST_DIR:-./backups}:/backups
+      - backups:/backups
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -32,3 +31,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  backups:
+    name: zenmoney-backups

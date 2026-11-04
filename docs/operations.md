@@ -58,10 +58,16 @@ docker compose up -d
 
 Копия содержит ответ API без изменений: полный снимок данных аккаунта на момент запроса.
 
-Сначала проверьте целостность (в папке с копиями):
+Сначала проверьте целостность:
 
 ```bash
-sha256sum -c zenmoney_2026-11-04_03-00-00.json.sha256
+docker exec zenmoney-backup sh -c 'cd /backups && sha256sum -c zenmoney_2026-11-04_03-00-00.json.sha256'
+```
+
+Затем скопируйте копию из тома на хост:
+
+```bash
+docker cp zenmoney-backup:/backups/zenmoney_2026-11-04_03-00-00.json .
 ```
 
 Посмотреть состав копии можно через `jq`, если он установлен:
@@ -105,7 +111,7 @@ docker compose up -d
 | `JSON has no top-level serverTimestamp` | Вместо данных пришёл другой JSON | Проверить `API_URL` и токен |
 | `Response exceeds MAX_BACKUP_BYTES` | Ответ больше предела | Увеличить `MAX_BACKUP_BYTES`, проверить место на диске |
 | `not enough disk space` | Закончилось место | Освободить место или уменьшить `RETENTION_COUNT` |
-| `disk error: ... Permission denied` | Нет прав у UID 10001 | Выполнить [`chown`](deployment.md#каталог-для-копий) для папки |
+| `disk error: ... Permission denied` | Том создан образом старше `1.0.1` или вручную | Выполнить `docker run --rm -v zenmoney-backups:/backups alpine chown -R 10001:10001 /backups` |
 | `Another backup is running, skipping` | Уже идёт другой бэкап | Дождаться окончания |
 | `Configuration error: ...` | Ошибка в `.env`, контейнер перезапускается | Исправить указанную переменную |
 | `Rotation: could not remove ...` | Не удалось удалить старую копию | Проверить права. Копия будет удалена при следующей ротации |
