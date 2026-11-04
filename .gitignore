@@ -1,0 +1,22 @@
+# Секреты
+.env
+
+# Резервные копии и временные файлы
+backups/
+zenmoney_*.json
+zenmoney_*.sha256
+*.tmp
+.backup.lock
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Система и IDE
+.DS_Store
+.idea/
+.vscode/
