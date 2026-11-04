@@ -1,0 +1,34 @@
+name: zenmoney-backup
+
+services:
+  zenmoney-backup:
+    image: ghcr.io/nzvekov/zenmoney-backup:${IMAGE_TAG:-latest}
+    container_name: zenmoney-backup
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      API_TOKEN: ${API_TOKEN:?Set API_TOKEN}
+      API_URL: ${API_URL:-}
+      API_TIMEOUT: ${API_TIMEOUT:-}
+      API_RETRY_COUNT: ${API_RETRY_COUNT:-}
+      API_RETRY_DELAY: ${API_RETRY_DELAY:-}
+      BACKUP_DIR: /backups
+      RETENTION_COUNT: ${RETENTION_COUNT:-}
+      MAX_BACKUP_BYTES: ${MAX_BACKUP_BYTES:-}
+      TZ: ${TZ:-Asia/Tbilisi}
+      BACKUP_HOUR: ${BACKUP_HOUR:-}
+      BACKUP_MINUTE: ${BACKUP_MINUTE:-}
+      CATCH_UP_MISSED: ${CATCH_UP_MISSED:-}
+      LOG_LEVEL: ${LOG_LEVEL:-}
+    volumes:
+      # Set BACKUP_HOST_DIR to a folder on a persistent host disk.
+      - ${BACKUP_HOST_DIR:-./backups}:/backups
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

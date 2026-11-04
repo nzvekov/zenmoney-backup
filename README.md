@@ -1,12 +1,12 @@
 # zenmoney-backup
 
-Сервис раз в день сохраняет полную копию данных ZenMoney в JSON-файл на локальный диск. Рассчитан на Docker на NAS UGREEN DXP6800 Pro (UGOS Pro).
+Сервис раз в день сохраняет полную копию данных ZenMoney в JSON-файл на локальный диск. Работает в Docker на любом хосте `linux/amd64`.
 
 Сервис делает запрос `POST /v8/diff/` с `serverTimestamp: 0`, потоково пишет ответ на диск и проверяет JSON. Затем атомарно публикует файл с контрольной суммой SHA-256 и оставляет последние N копий. База данных и другие сервисы не нужны.
 
 ## Быстрый старт
 
-Нужны Docker с Compose и токен ZenMoney (см. [развёртывание](docs/deployment-ugreen.md#токен-zenmoney)).
+Нужны Docker с Compose и токен ZenMoney (см. [развёртывание](docs/deployment.md#токен-zenmoney)).
 
 ```bash
 cp deploy/.env.example deploy/.env
@@ -21,7 +21,7 @@ make up
 Без `make` то же самое делает команда:
 
 ```bash
-cd deploy && docker compose up -d --build
+cd deploy && docker compose up -d
 ```
 
 Если копий ещё нет, первая создаётся сразу после старта. Проверить можно по логам:
@@ -32,7 +32,7 @@ make logs
 
 ## Документация
 
-- [Развёртывание на UGREEN NAS](docs/deployment-ugreen.md): токен, `.env`, каталог на HDD, запуск.
+- [Развёртывание](docs/deployment.md): токен, `.env`, каталог для копий, запуск через Docker Compose и Portainer.
 - [Эксплуатация](docs/operations.md): ручная копия, логи, расписание, число копий, восстановление, типичные ошибки.
 - [Архитектура](docs/architecture.md): поток данных, гарантии, сценарии отказа, решения.
 
@@ -48,23 +48,23 @@ src/zenmoney_backup/   код сервиса
   scheduler.py         расписание, пропущенный запуск, сигналы
   notify.py            точка подключения уведомлений
 tests/                 автоматические тесты
-deploy/                Dockerfile, compose.yaml, .env.example
+deploy/                Dockerfile, docker-compose.yml, .env.example
 docs/                  документация
 ```
 
 ## Настройки
 
-Все настройки задаются в `deploy/.env`.
+Все настройки задаются в `.env` рядом с `docker-compose.yml` или в переменных стека Portainer.
 
 | Переменная | По умолчанию | Назначение |
 |---|---|---|
 | `API_TOKEN` | нет, обязательна | Токен доступа ZenMoney |
-| `BACKUP_HOST_DIR` | `./backups` | Папка на NAS, куда сохраняются копии. Читается только Compose |
+| `BACKUP_HOST_DIR` | `./backups` | Папка на хосте, куда сохраняются копии. Читается только Compose |
+| `IMAGE_TAG` | `latest` | Версия образа. В рабочей среде лучше указывать конкретную, например `1.0.0` |
 | `API_URL` | `https://api.zenmoney.ru/v8/diff/` | URL метода diff, только HTTPS |
 | `API_TIMEOUT` | `120` | Таймаут одной сетевой операции, секунды. Это не предел на всю загрузку |
 | `API_RETRY_COUNT` | `3` | Сколько раз повторить запрос после первой неудачи |
 | `API_RETRY_DELAY` | `30` | Пауза между попытками, секунды |
-| `BACKUP_DIR` | `/backups` | Каталог копий внутри контейнера |
 | `RETENTION_COUNT` | `30` | Сколько последних копий хранить |
 | `MAX_BACKUP_BYTES` | `2147483648` | Предел размера одного ответа |
 | `TZ` | `Asia/Tbilisi` | Часовой пояс расписания, имён файлов и логов |
@@ -84,8 +84,7 @@ docs/                  документация
 | `make format` | Отформатировать код через ruff |
 | `make test` | Запустить тесты |
 | `make check` | Запустить линтер и тесты |
-| `make build` | Собрать образ |
-| `make up` | Собрать образ и запустить контейнер |
+| `make up` | Запустить контейнер из опубликованного образа |
 | `make down` | Остановить и удалить контейнер |
 | `make restart` | Перезапустить контейнер |
 | `make ps` | Показать состояние контейнера |
@@ -104,4 +103,25 @@ make install
 make check
 ```
 
-Зависимости меняются через `uv add`, а `uv.lock` хранится в git. Образ собирается строго по этому файлу. CI в `.github/workflows/ci.yml` запускает ruff, тесты и сборку образа.
+Зависимости меняются через `uv add`, а `uv.lock` хранится в git. Образ собирается строго по этому файлу. CI в `.github/workflows/ci.yml` запускает ruff, тесты и пробную сборку образа.
+
+Локально образ собирается так:
+
+```bash
+docker build -f deploy/Dockerfile -t ghcr.io/nzvekov/zenmoney-backup:latest .
+```
+
+## Выпуск версии
+
+1. Обновите `version` в `pyproject.toml`, выполните `uv lock` и слейте изменения в `main`.
+2. Создайте тег на этом коммите и отправьте его:
+
+```bash
+git tag v1.0.0
+```
+
+```bash
+git push origin v1.0.0
+```
+
+CI проверит код, соберёт образ для `linux/amd64` и опубликует его как `ghcr.io/nzvekov/zenmoney-backup:1.0.0` и `:latest`. Если проверки не пройдут, образ не опубликуется.

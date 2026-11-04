@@ -1,8 +1,8 @@
-COMPOSE := docker compose -f deploy/compose.yaml
+COMPOSE := docker compose -f deploy/docker-compose.yml
 SERVICE := zenmoney-backup
 
 .DEFAULT_GOAL := help
-.PHONY: help install lint format test check build up down restart ps logs backup
+.PHONY: help install lint format test check up down restart ps logs backup
 
 help: ## Показать список команд
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -24,11 +24,8 @@ test: ## Запустить тесты
 
 check: lint test ## Запустить линтер и тесты
 
-build: ## Собрать образ
-	$(COMPOSE) build
-
-up: ## Собрать образ и запустить контейнер
-	$(COMPOSE) up -d --build
+up: ## Запустить контейнер из опубликованного образа
+	$(COMPOSE) up -d
 
 down: ## Остановить и удалить контейнер
 	$(COMPOSE) down
