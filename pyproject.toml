@@ -1,0 +1,46 @@
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[project]
+name = "zenmoney-backup"
+version = "1.0.0"
+description = "Daily full backup of ZenMoney data to a local disk"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "apscheduler>=3.10,<4",
+    "httpx>=0.27",
+    "ijson>=3.3,<4",
+    "tzdata",
+]
+
+[project.scripts]
+zenmoney-backup = "zenmoney_backup.cli:main"
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "pytest",
+    "ruff",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+exclude = [".env", ".git", "__pycache__", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E203"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["zenmoney_backup"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
